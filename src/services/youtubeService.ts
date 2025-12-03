@@ -27,6 +27,8 @@ import { getActiveInstruction } from './instructionService';
 
 const YOUTUBE_API_KEY_STORAGE_KEY = 'yt_macgyver_youtube_api_key';
 const GEMINI_API_KEY_STORAGE_KEY = 'yt_macgyver_gemini_api_key';
+const SUPABASE_URL_STORAGE_KEY = 'yt_macgyver_supabase_url';
+const SUPABASE_KEY_STORAGE_KEY = 'yt_macgyver_supabase_key';
 
 // --- Default Objects for Robustness ---
 const defaultStrategy: StrategyResult = {
@@ -77,7 +79,13 @@ export const getYouTubeApiKey = (): string | null => localStorage.getItem(YOUTUB
 export const setGeminiApiKey = (key: string) => localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
 export const getGeminiApiKey = (): string | null => localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
 
-export const isApiKeySet = (): boolean => !!getYouTubeApiKey() && !!getGeminiApiKey();
+export const setSupabaseUrl = (url: string) => localStorage.setItem(SUPABASE_URL_STORAGE_KEY, url);
+export const getSupabaseUrl = (): string | null => localStorage.getItem(SUPABASE_URL_STORAGE_KEY);
+
+export const setSupabaseKey = (key: string) => localStorage.setItem(SUPABASE_KEY_STORAGE_KEY, key);
+export const getSupabaseKey = (): string | null => localStorage.getItem(SUPABASE_KEY_STORAGE_KEY);
+
+export const isApiKeySet = (): boolean => !!getYouTubeApiKey() && !!getGeminiApiKey() && !!getSupabaseUrl() && !!getSupabaseKey();
 
 export const testApiKey = async (key: string) => {
     try {

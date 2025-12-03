@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
     setYouTubeApiKey, getYouTubeApiKey, 
-    setGeminiApiKey, getGeminiApiKey, 
+    setGeminiApiKey, getGeminiApiKey,
+    setSupabaseUrl, getSupabaseUrl,
+    setSupabaseKey, getSupabaseKey,
     testApiKey, testGeminiApiKey 
 } from '../services/youtubeService';
 import { EyeIcon, EyeOffIcon, TrashIcon, XMarkIcon, KeyIcon, RocketIcon, CheckCircleIcon, ExclamationCircleIcon } from './icons';
@@ -16,9 +18,13 @@ interface ApiKeyMessageProps {
 const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySubmit }) => {
   const [youtubeKey, setYoutubeKey] = useState('');
   const [geminiKey, setGeminiKey] = useState('');
+  const [supabaseUrl, setSupabaseUrlState] = useState('');
+  const [supabaseKey, setSupabaseKeyState] = useState('');
   
   const [isYoutubeVisible, setIsYoutubeVisible] = useState(false);
   const [isGeminiVisible, setIsGeminiVisible] = useState(false);
+  const [isSupabaseUrlVisible, setIsSupabaseUrlVisible] = useState(false);
+  const [isSupabaseKeyVisible, setIsSupabaseKeyVisible] = useState(false);
   
   // Separate states for testing
   const [ytStatus, setYtStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -27,14 +33,21 @@ const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySub
   const [geminiStatus, setGeminiStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [geminiMessage, setGeminiMessage] = useState('');
 
+  const [supabaseStatus, setSupabaseStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [supabaseMessage, setSupabaseMessage] = useState('');
+
   useEffect(() => {
     if (isOpen) {
       setYoutubeKey(getYouTubeApiKey() || '');
       setGeminiKey(getGeminiApiKey() || '');
+      setSupabaseUrlState(getSupabaseUrl() || '');
+      setSupabaseKeyState(getSupabaseKey() || '');
       setYtStatus('idle');
       setYtMessage('');
       setGeminiStatus('idle');
       setGeminiMessage('');
+      setSupabaseStatus('idle');
+      setSupabaseMessage('');
     }
   }, [isOpen]);
 
@@ -80,15 +93,48 @@ const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySub
     }
   };
 
+  const handleTestSupabase = async () => {
+    if (!supabaseUrl.trim() || !supabaseKey.trim()) {
+      setSupabaseStatus('error');
+      setSupabaseMessage('Supabase URL과 Key를 모두 입력해주세요.');
+      return;
+    }
+    setSupabaseStatus('testing');
+    setSupabaseMessage('확인 중...');
+    
+    try {
+      // Supabase 연결 테스트
+      const response = await fetch(`${supabaseUrl.trim()}/rest/v1/`, {
+        headers: {
+          'apikey': supabaseKey.trim(),
+          'Authorization': `Bearer ${supabaseKey.trim()}`,
+        },
+      });
+      
+      if (response.ok || response.status === 401) {
+        // 401은 인증 실패지만 서버가 응답했다는 의미 (연결 성공)
+        setSupabaseStatus('success');
+        setSupabaseMessage('Supabase 연결이 유효합니다.');
+      } else {
+        throw new Error('Supabase 연결 실패');
+      }
+    } catch (error: any) {
+      setSupabaseStatus('error');
+      setSupabaseMessage('Supabase 연결을 확인해주세요.');
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (youtubeKey.trim() && geminiKey.trim()) {
+    if (youtubeKey.trim() && geminiKey.trim() && supabaseUrl.trim() && supabaseKey.trim()) {
       setYouTubeApiKey(youtubeKey.trim());
       setGeminiApiKey(geminiKey.trim());
+      setSupabaseUrl(supabaseUrl.trim());
+      setSupabaseKey(supabaseKey.trim());
       onKeySubmit();
     } else {
         // Just a gentle alert, though form shouldn't submit if disabled
-        alert('두 개의 키를 모두 입력해야 합니다.');
+        alert('모든 API 키를 입력해야 합니다.');
     }
   };
 
@@ -96,10 +142,15 @@ const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySub
       if(window.confirm('저장된 모든 API 키를 삭제하시겠습니까?')) {
           setYouTubeApiKey('');
           setGeminiApiKey('');
+          setSupabaseUrl('');
+          setSupabaseKey('');
           setYoutubeKey('');
           setGeminiKey('');
+          setSupabaseUrlState('');
+          setSupabaseKeyState('');
           setYtStatus('idle'); setYtMessage('');
           setGeminiStatus('idle'); setGeminiMessage('');
+          setSupabaseStatus('idle'); setSupabaseMessage('');
       }
   };
   
@@ -130,11 +181,11 @@ const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySub
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-60 z-[9999] flex justify-center items-center p-4 transition-opacity"
+      className="fixed inset-0 bg-black bg-opacity-60 z-[9999] flex justify-center items-center p-4 transition-opacity overflow-y-auto"
       onClick={(e) => { if(e.target === e.currentTarget) onClose(); }}
     >
       <div 
-        className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl max-w-xl w-full text-center border-t-4 border-red-500 relative animate-fade-in-up"
+        className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl max-w-xl w-full text-center border-t-4 border-red-500 relative animate-fade-in-up my-8"
         onClick={e => e.stopPropagation()}
         style={{ animation: 'fade-in-up 0.3s ease-out' }}
       >
@@ -153,7 +204,7 @@ const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySub
         
         <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">API 키 설정</h2>
         <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
-          원활한 서비스 이용을 위해 <strong>두 가지 API 키</strong>가 모두 필요합니다.<br/>
+          원활한 서비스 이용을 위해 <strong>4가지 API 키</strong>가 모두 필요합니다.<br/>
           <span className="text-slate-400 text-xs">(키는 브라우저에만 안전하게 저장됩니다)</span>
         </p>
 
@@ -210,24 +261,82 @@ const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySub
               </p>
           </div>
 
+          {/* Supabase URL Input */}
+          <div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-2">
+                  <i className="fas fa-database text-green-600"></i> Supabase URL
+              </label>
+              <div className="relative">
+                <input
+                  type={isSupabaseUrlVisible ? 'text' : 'password'}
+                  value={supabaseUrl}
+                  onChange={(e) => setSupabaseUrlState(e.target.value)}
+                  placeholder="https://xxxxx.supabase.co (데이터베이스용)"
+                  className={`w-full pl-4 pr-12 py-3 text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition ${supabaseStatus === 'error' ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'}`}
+                />
+                <button
+                    type="button"
+                    onClick={() => setIsSupabaseUrlVisible(!isSupabaseUrlVisible)}
+                    className="absolute inset-y-0 right-0 flex items-center justify-center w-12 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                >
+                    {isSupabaseUrlVisible ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+          </div>
+
+          {/* Supabase Key Input */}
+          <div>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-2">
+                  <i className="fas fa-key text-green-600"></i> Supabase Anon Key
+              </label>
+              <div className="relative">
+                <input
+                  type={isSupabaseKeyVisible ? 'text' : 'password'}
+                  value={supabaseKey}
+                  onChange={(e) => setSupabaseKeyState(e.target.value)}
+                  placeholder="eyJhbGc... (데이터베이스 접근용)"
+                  className={`w-full pl-4 pr-12 py-3 text-sm bg-slate-50 dark:bg-slate-700 dark:text-slate-100 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition ${supabaseStatus === 'error' ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'}`}
+                />
+                <button
+                    type="button"
+                    onClick={() => setIsSupabaseKeyVisible(!isSupabaseKeyVisible)}
+                    className="absolute inset-y-0 right-0 flex items-center justify-center w-12 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                >
+                    {isSupabaseKeyVisible ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
+              <StatusMessage status={supabaseStatus} message={supabaseMessage} />
+              <p className="text-xs text-slate-400 mt-1">
+                  * <a href="https://supabase.com" target="_blank" rel="noreferrer" className="underline hover:text-green-500">Supabase</a>에서 프로젝트 설정에서 확인할 수 있습니다.
+              </p>
+          </div>
+
           {/* Buttons */}
           <div className="pt-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                     type="button"
                     onClick={handleTestYoutube}
-                    className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold py-2.5 px-4 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm border border-slate-200 dark:border-slate-600"
+                    className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold py-2.5 px-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-xs border border-slate-200 dark:border-slate-600"
                     disabled={!youtubeKey.trim()}
                 >
-                    YouTube 키 테스트
+                    YouTube 테스트
                 </button>
                 <button
                     type="button"
                     onClick={handleTestGemini}
-                    className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold py-2.5 px-4 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm border border-slate-200 dark:border-slate-600"
+                    className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold py-2.5 px-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-xs border border-slate-200 dark:border-slate-600"
                     disabled={!geminiKey.trim()}
                 >
-                    Gemini 키 테스트
+                    Gemini 테스트
+                </button>
+                <button
+                    type="button"
+                    onClick={handleTestSupabase}
+                    className="bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 font-bold py-2.5 px-3 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-xs border border-slate-200 dark:border-slate-600"
+                    disabled={!supabaseUrl.trim() || !supabaseKey.trim()}
+                >
+                    Supabase 테스트
                 </button>
               </div>
 
@@ -243,7 +352,7 @@ const ApiKeyMessage: React.FC<ApiKeyMessageProps> = ({ isOpen, onClose, onKeySub
                 <button
                     type="submit"
                     className="flex-1 bg-gradient-to-r from-red-600 to-pink-600 text-white font-bold py-3 px-4 rounded-lg hover:from-red-700 hover:to-pink-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!youtubeKey.trim() || !geminiKey.trim()}
+                    disabled={!youtubeKey.trim() || !geminiKey.trim() || !supabaseUrl.trim() || !supabaseKey.trim()}
                 >
                     저장하고 시작하기
                 </button>
