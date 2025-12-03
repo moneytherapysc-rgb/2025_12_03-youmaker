@@ -25,8 +25,6 @@ import type {
 } from '../types';
 import { getActiveInstruction } from './instructionService';
 
-const YOUTUBE_API_KEY_STORAGE_KEY = 'yt_macgyver_youtube_api_key';
-const GEMINI_API_KEY_STORAGE_KEY = 'yt_macgyver_gemini_api_key';
 const SUPABASE_URL_STORAGE_KEY = 'yt_macgyver_supabase_url';
 const SUPABASE_KEY_STORAGE_KEY = 'yt_macgyver_supabase_key';
 
@@ -73,11 +71,6 @@ const defaultThumbnailAnalysis: ThumbnailAnalysisResult = {
     feedback: { strengths: [], weaknesses: [], improvements: [] }
 };
 
-export const setYouTubeApiKey = (key: string) => localStorage.setItem(YOUTUBE_API_KEY_STORAGE_KEY, key);
-export const getYouTubeApiKey = (): string | null => localStorage.getItem(YOUTUBE_API_KEY_STORAGE_KEY);
-
-export const setGeminiApiKey = (key: string) => localStorage.setItem(GEMINI_API_KEY_STORAGE_KEY, key);
-export const getGeminiApiKey = (): string | null => localStorage.getItem(GEMINI_API_KEY_STORAGE_KEY);
 
 export const setSupabaseUrl = (url: string) => localStorage.setItem(SUPABASE_URL_STORAGE_KEY, url);
 export const getSupabaseUrl = (): string | null => localStorage.getItem(SUPABASE_URL_STORAGE_KEY);
